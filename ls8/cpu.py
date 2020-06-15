@@ -21,7 +21,7 @@ class CPU:
         address = 0
 
         for instruction in program:
-            self.ram[address] = instruction
+            self.ram_write(address, instruction)
             address += 1
 
 
@@ -35,7 +35,7 @@ class CPU:
             raise Exception("Unsupported ALU operation")
 
     def ram_read(self, index):
-        print(self.ram[index])
+        return self.ram[index]
 
     def ram_write(self, index, value):
         self.ram[index] = value
@@ -67,12 +67,12 @@ class CPU:
         while running:
             ir = self.ram[self.pc]
             if ir == self.LDI:
-                reg_num = self.ram[self.pc+1]
-                value = self.ram[self.pc+2]
+                reg_num = self.ram_read(self.pc+1)
+                value = self.ram_read(self.pc+2)
                 self.reg[reg_num] = value
                 self.pc += 3
             elif ir == self.PRN:
-                reg_num = self.ram[self.pc+1]
+                reg_num = self.ram_read(self.pc+1)
                 print(self.reg[reg_num])
                 self.pc +=2
             elif ir == self.HLT:

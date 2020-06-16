@@ -10,9 +10,28 @@ class CPU:
         self.reg = [0] * 8
         self.ram = [0] * 256
         self.pc = 0
-        self.LDI = 0b10000010
-        self.PRN = 0b01000111
-        self.HLT = 0b00000001
+        self.running = False
+        self.branch_table = {
+            0b10000010: self.LDI,
+            0b01000111: self.PRN,
+            0b10100010: self.MULT,
+            0b00000001: self.HLT
+        }
+
+    def LDI(self):
+        reg_num = self.ram_read(self.pc+1)
+        value = self.ram_read(self.pc+2)
+        self.reg[reg_num] = value
+
+    def PRN(self):
+        reg_num = self.ram_read(self.pc+1)
+        print(self.reg[reg_num])
+
+    def HLT(self):
+        self.running = False
+
+    def MULT(self):
+        self.alu('MULT', self.pc+1, self.pc+2)
 
     def load(self):
         """Load a program into memory."""
@@ -34,7 +53,9 @@ class CPU:
         """ALU operations."""
 
         if op == "ADD":
-            self.reg[reg_a] += self.reg[reg_b]
+            self.reg[self.pc+1] += self.reg[self.pc+2]
+        elif op == "MULT":
+            self.reg[self.ram[reg_a]] *= self.reg[self.ram[reg_b]]
         #elif op == "SUB": etc
         else:
             raise Exception("Unsupported ALU operation")
@@ -68,22 +89,12 @@ class CPU:
 
     def run(self):
         """Run the CPU."""
-        running = True
-        while running:
+        self.running = True
+        while self.running:
             ir = self.ram[self.pc]
-            if ir == self.LDI:
-                reg_num = self.ram_read(self.pc+1)
-                value = self.ram_read(self.pc+2)
-                self.reg[reg_num] = value
-                self.pc += 3
-            elif ir == self.PRN:
-                reg_num = self.ram_read(self.pc+1)
-                print(self.reg[reg_num])
-                self.pc +=2
-            elif ir == self.HLT:
-                running = False
-                self.pc +=1
-            else:
+            if ir not in self.branch_table:
                 print(f'Unkown instruction {ir} at address {self.pc}')
-                print(self.ram_read(self.pc))
                 sys.exit(1)
+            self.branch_table[ir]()
+            params = (ir & 0b11000000) >> 6
+            self.pc += params + 1

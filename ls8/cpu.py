@@ -14,18 +14,20 @@ class CPU:
         self.PRN = 0b01000111
         self.HLT = 0b00000001
 
-    def load(self, program):
+    def load(self):
         """Load a program into memory."""
-
+        address = 0
         with open(sys.argv[1]) as f:
-            for address, instruction in enumerate(f):
+            for instruction in f:
                 instruction = instruction.split('#')
                 try:
-                    ins = int(instruction[0],2)
+                    ins = int(instruction[0], 2)
+                    self.ram_write(address, ins)
+                    address += 1
                 except ValueError:
                     continue
-
-                self.ram_write(address, ins)
+                
+                
 
 
     def alu(self, op, reg_a, reg_b):

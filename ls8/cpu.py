@@ -7,9 +7,8 @@ class CPU:
 
     def __init__(self):
         """Construct a new CPU."""
-        self.memory = [0] * 256
         self.reg = [0] * 8
-        self.ram = [0] * 8
+        self.ram = [0] * 256
         self.pc = 0
         self.LDI = 0b10000010
         self.PRN = 0b01000111
@@ -18,11 +17,15 @@ class CPU:
     def load(self, program):
         """Load a program into memory."""
 
-        address = 0
+        with open(sys.argv[1]) as f:
+            for address, instruction in enumerate(f):
+                instruction = instruction.split('#')
+                try:
+                    ins = int(instruction[0],2)
+                except ValueError:
+                    continue
 
-        for instruction in program:
-            self.ram_write(address, instruction)
-            address += 1
+                self.ram_write(address, ins)
 
 
     def alu(self, op, reg_a, reg_b):
@@ -80,4 +83,5 @@ class CPU:
                 self.pc +=1
             else:
                 print(f'Unkown instruction {ir} at address {self.pc}')
+                print(self.ram_read(self.pc))
                 sys.exit(1)

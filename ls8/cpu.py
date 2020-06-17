@@ -16,10 +16,13 @@ class CPU:
             0b10000010: self.LDI,
             0b01000111: self.PRN,
             0b10100010: self.MULT,
+            0b10100000: self.ADD,
             0b01100101: self.INC,
             0b01100110: self.DEC,
             0b01000101: self.PUSH,
             0b01000110: self.POP,
+            0b01010000: self.CALL,
+            0b00010001: self.RET,
             0b00000001: self.HLT
         }
 
@@ -37,6 +40,9 @@ class CPU:
 
     def MULT(self):
         self.alu('MULT', self.pc+1, self.pc+2)
+
+    def ADD(self):
+        self.alu('ADD', self.pc+1, self.pc+2)
 
     def DEC(self):
         self.alu('DEC', self.pc+1, None)
@@ -61,6 +67,23 @@ class CPU:
         #increment sp
         self.reg[self.sp] +=1
 
+    def CALL(self):
+        return_address = self.pc + 2
+
+        self.reg[self.sp] -=1
+        self.ram[self.reg[self.sp]] = return_address
+
+        reg_num = self.ram[self.pc+1]
+        destination = self.reg[reg_num]
+        self.pc = destination
+
+    def RET(self):
+        return_address = self.ram[self.reg[self.sp]]
+        self.reg[self.sp] += 1
+
+        self.pc = return_address
+
+
     def load(self):
         """Load a program into memory."""
         address = 0
@@ -81,7 +104,7 @@ class CPU:
         """ALU operations."""
 
         if op == "ADD":
-            self.reg[self.pc+1] += self.reg[self.pc+2]
+            self.reg[self.ram[reg_a]] += self.reg[self.ram[reg_b]]
         elif op == "MULT":
             self.reg[self.ram[reg_a]] *= self.reg[self.ram[reg_b]]
         elif op == "DEC":
@@ -122,10 +145,13 @@ class CPU:
         """Run the CPU."""
         self.running = True
         while self.running:
+            # print('pc', self.pc)
+            # print('sp', self.ram[self.reg[self.sp]])
             ir = self.ram[self.pc]
             if ir not in self.branch_table:
-                print(f'Unkown instruction {ir} at address {self.pc}')
+                print(f'Unknown instruction {ir} at address {self.pc}')
                 sys.exit(1)
             self.branch_table[ir]()
             params = (ir & 0b11000000) >> 6
-            self.pc += params + 1
+            if ir != 0b01010000 and ir != 0b00010001:
+                self.pc += params + 1

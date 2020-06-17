@@ -7,14 +7,19 @@ class CPU:
 
     def __init__(self):
         """Construct a new CPU."""
-        self.reg = [0] * 8
+        self.reg = [0,0,0,0,0,0,0,0xf4]
         self.ram = [0] * 256
         self.pc = 0
         self.running = False
+        self.sp = 7
         self.branch_table = {
             0b10000010: self.LDI,
             0b01000111: self.PRN,
             0b10100010: self.MULT,
+            0b01100101: self.INC,
+            0b01100110: self.DEC,
+            0b01000101: self.PUSH,
+            0b01000110: self.POP,
             0b00000001: self.HLT
         }
 
@@ -32,6 +37,29 @@ class CPU:
 
     def MULT(self):
         self.alu('MULT', self.pc+1, self.pc+2)
+
+    def DEC(self):
+        self.alu('DEC', self.pc+1, None)
+
+    def INC(self):
+        self.alu('INC', self.pc+1, None)
+    
+    def PUSH(self):
+        #decrement register at SP
+        self.reg[self.sp] -=1
+        #get value from next entry in memory
+        reg_num = self.ram[self.pc + 1]
+        value = self.reg[reg_num]
+        #store it appropriately
+        self.ram[self.reg[self.sp]] = value
+    
+    def POP(self):
+        address = self.reg[self.sp]
+        value = self.ram[address]
+        #go to register listed next in ram
+        self.reg[self.ram[self.pc +1 ]] = value
+        #increment sp
+        self.reg[self.sp] +=1
 
     def load(self):
         """Load a program into memory."""
@@ -56,7 +84,10 @@ class CPU:
             self.reg[self.pc+1] += self.reg[self.pc+2]
         elif op == "MULT":
             self.reg[self.ram[reg_a]] *= self.reg[self.ram[reg_b]]
-        #elif op == "SUB": etc
+        elif op == "DEC":
+            self.reg[reg_a] -= 1
+        elif op == "INC":
+            self.reg[reg_a] += 1
         else:
             raise Exception("Unsupported ALU operation")
 

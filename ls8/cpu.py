@@ -12,6 +12,8 @@ class CPU:
         self.pc = 0
         self.running = False
         self.sp = 7
+        self.flag = 0b00000000
+        self.skip_commands = [0b01010000, 0b00010001, 0b01010101, 0b01010110, 0b01010100]
         self.branch_table = {
             0b10000010: self.LDI,
             0b01000111: self.PRN,
@@ -19,12 +21,21 @@ class CPU:
             0b10100000: self.ADD,
             0b01100101: self.INC,
             0b01100110: self.DEC,
+            0b10000100: self.ST,
+            0b10100111: self.CMP,
+            0b01010100: self.JMP,
+            0b01010101: self.JEQ,
+            0b01010110: self.JNE,
+            0b01001000: self.PRA,
             0b01000101: self.PUSH,
             0b01000110: self.POP,
             0b01010000: self.CALL,
             0b00010001: self.RET,
+            0b01010010: self.INT,
+            0b00010011: self.IRET,
             0b00000001: self.HLT
         }
+
 
     def LDI(self):
         reg_num = self.ram_read(self.pc+1)
@@ -50,6 +61,23 @@ class CPU:
     def INC(self):
         self.alu('INC', self.pc+1, None)
     
+    def CMP(self):
+        self.alu('CMP', self.pc+1, self.pc+2)
+    
+    def JEQ(self):
+        if self.flag == 0b00000001:
+            reg_num = self.ram[self.pc+1]
+            self.pc = self.reg[reg_num]
+        else:
+            self.pc += 2
+
+    def JNE(self):
+        if self.flag != 0b00000001:
+            reg_num = self.ram[self.pc+1]
+            self.pc = self.reg[reg_num]
+        else:
+            self.pc += 2
+
     def PUSH(self):
         #decrement register at SP
         self.reg[self.sp] -=1
@@ -83,6 +111,28 @@ class CPU:
 
         self.pc = return_address
 
+    def INT(self):
+        pass
+
+
+    def IRET(self):
+        pass
+    
+    def ST(self):
+        reg_a = self.ram[self.pc +1]
+        reg_b = self.ram[self.pc +2]
+
+        reg_b_val = self.reg[reg_b]
+        self.ram[self.reg[reg_a]] = reg_b_val
+
+    def JMP(self):
+        reg_addr = self.ram[self.pc+1]
+        self.pc = self.reg[reg_addr]
+
+    def PRA(self):
+        reg_addr = self.ram[self.pc+1]
+        num = self.reg[reg_addr]
+        print(chr(num))
 
     def load(self):
         """Load a program into memory."""
@@ -107,6 +157,16 @@ class CPU:
             self.reg[self.ram[reg_a]] += self.reg[self.ram[reg_b]]
         elif op == "MULT":
             self.reg[self.ram[reg_a]] *= self.reg[self.ram[reg_b]]
+        elif op == "CMP":
+            value_a = self.reg[self.ram[reg_a]] 
+            value_b = self.reg[self.ram[reg_b]]
+
+            if value_a == value_b:
+                self.flag = 0b00000001
+            elif value_a < value_b:
+                self.flag = 0b00000100
+            elif value_a > value_b:
+                self.flag = 0b00000010
         elif op == "DEC":
             self.reg[reg_a] -= 1
         elif op == "INC":
@@ -150,8 +210,11 @@ class CPU:
             ir = self.ram[self.pc]
             if ir not in self.branch_table:
                 print(f'Unknown instruction {ir} at address {self.pc}')
+                
                 sys.exit(1)
             self.branch_table[ir]()
             params = (ir & 0b11000000) >> 6
-            if ir != 0b01010000 and ir != 0b00010001:
+            if ir not in self.skip_commands:
                 self.pc += params + 1
+                
+           

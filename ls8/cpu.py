@@ -19,6 +19,13 @@ class CPU:
             0b01000111: self.PRN,
             0b10100010: self.MULT,
             0b10100000: self.ADD,
+            0b10101000: self.AND,
+            0b10101010: self.OR,
+            0b10101011: self.XOR,
+            0b01101001: self.NOT,
+            0b10101100: self.SHL,
+            0b10101101: self.SHR,
+            0b10100100: self.MOD,
             0b01100101: self.INC,
             0b01100110: self.DEC,
             0b10000100: self.ST,
@@ -63,6 +70,27 @@ class CPU:
     
     def CMP(self):
         self.alu('CMP', self.pc+1, self.pc+2)
+
+    def AND(self):
+        self.alu('AND', self.pc+1, self.pc+2)
+
+    def OR(self):
+        self.alu('OR', self.pc+1, self.pc+2)
+
+    def XOR(self):
+        self.alu('XOR', self.pc+1, self.pc+2)
+
+    def NOT(self):
+        self.alu('NOT', self.pc+1, self.pc+2)
+
+    def SHL(self):
+        self.alu('SHL', self.pc+1, self.pc+2)
+
+    def SHR(self):
+        self.alu('SHR', self.pc+1, self.pc+2)
+    
+    def MOD(self):
+        self.alu('MOD', self.pc+1, self.pc+2)
     
     def JEQ(self):
         if self.flag == 0b00000001:
@@ -171,6 +199,38 @@ class CPU:
             self.reg[reg_a] -= 1
         elif op == "INC":
             self.reg[reg_a] += 1
+        elif op == "AND":
+            result = self.reg[self.ram[reg_a]] & self.reg[self.ram[reg_b]]
+            self.reg[self.ram[reg_a]] = result
+        elif op == "OR":
+            result = self.reg[self.ram[reg_a]] | self.reg[self.ram[reg_b]]
+            self.reg[self.ram[reg_a]] = result
+        elif op == "XOR":
+            result = self.reg[self.ram[reg_a]] ^ self.reg[self.ram[reg_b]]
+            self.reg[self.ram[reg_a]] = result
+        elif op == "NOT":
+            # result = self.reg[self.ram[reg_a]] ~ self.reg[self.ram[reg_b]]
+            # self.reg[self.ram[reg_a]] = result
+            pass
+        elif op == "SHL":
+            mask_orig = 0b11111111
+            mask = mask_orig >> self.reg[self.ram[reg_b]]
+            result = self.reg[self.ram[reg_a]] & mask
+            
+            self.reg[self.ram[reg_a]] = result << self.reg[self.ram[reg_b]]
+        elif op == "SHR":
+            mask_orig = 0b11111111
+            mask = mask_orig << self.reg[self.ram[reg_b]]
+            result = self.reg[self.ram[reg_a]] & mask
+            
+            self.reg[self.ram[reg_a]] = result >> self.reg[self.ram[reg_b]]
+        elif op == "MOD":
+            if self.reg[self.ram[reg_b]] != 0:
+                result = self.reg[self.ram[reg_a]] % self.reg[self.ram[reg_b]]
+                self.reg[self.ram[reg_a]] = result
+            else: 
+                print('error cannot divide by zero')
+                sys.exit(1)
         else:
             raise Exception("Unsupported ALU operation")
 

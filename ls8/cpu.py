@@ -183,8 +183,10 @@ class CPU:
 
         if op == "ADD":
             self.reg[self.ram[reg_a]] += self.reg[self.ram[reg_b]]
+        
         elif op == "MULT":
             self.reg[self.ram[reg_a]] *= self.reg[self.ram[reg_b]]
+        
         elif op == "CMP":
             value_a = self.reg[self.ram[reg_a]] 
             value_b = self.reg[self.ram[reg_b]]
@@ -195,35 +197,37 @@ class CPU:
                 self.flag = 0b00000100
             elif value_a > value_b:
                 self.flag = 0b00000010
+        
         elif op == "DEC":
             self.reg[reg_a] -= 1
+       
         elif op == "INC":
             self.reg[reg_a] += 1
+        
         elif op == "AND":
             result = self.reg[self.ram[reg_a]] & self.reg[self.ram[reg_b]]
             self.reg[self.ram[reg_a]] = result
+        
         elif op == "OR":
             result = self.reg[self.ram[reg_a]] | self.reg[self.ram[reg_b]]
             self.reg[self.ram[reg_a]] = result
+        
         elif op == "XOR":
             result = self.reg[self.ram[reg_a]] ^ self.reg[self.ram[reg_b]]
             self.reg[self.ram[reg_a]] = result
+        
         elif op == "NOT":
-            # result = self.reg[self.ram[reg_a]] ~ self.reg[self.ram[reg_b]]
-            # self.reg[self.ram[reg_a]] = result
-            pass
+            result = self.reg[self.ram[reg_a]] ^ 0b11111111
+
+            self.reg[self.ram[reg_a]] = result
+            
+        
         elif op == "SHL":
-            mask_orig = 0b11111111
-            mask = mask_orig >> self.reg[self.ram[reg_b]]
-            result = self.reg[self.ram[reg_a]] & mask
-            
-            self.reg[self.ram[reg_a]] = result << self.reg[self.ram[reg_b]]
+            self.reg[self.ram[reg_a]] = self.reg[self.ram[reg_a]] << self.reg[self.ram[reg_b]]
+        
         elif op == "SHR":
-            mask_orig = 0b11111111
-            mask = mask_orig << self.reg[self.ram[reg_b]]
-            result = self.reg[self.ram[reg_a]] & mask
-            
-            self.reg[self.ram[reg_a]] = result >> self.reg[self.ram[reg_b]]
+            self.reg[self.ram[reg_a]] = self.reg[self.ram[reg_a]] >> self.reg[self.ram[reg_b]]
+        
         elif op == "MOD":
             if self.reg[self.ram[reg_b]] != 0:
                 result = self.reg[self.ram[reg_a]] % self.reg[self.ram[reg_b]]
